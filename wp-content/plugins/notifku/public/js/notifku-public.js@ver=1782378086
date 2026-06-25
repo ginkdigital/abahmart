@@ -1,0 +1,148 @@
+(function(w,d) {
+	'use strict';
+
+	// notifku.element = d.getElementById('notifku');
+	// notifku.template = d.getElementById('notifku-template').innerHTML;
+	// notifku.ajax = new XMLHttpRequest();
+	// notifku.ajax_url += '?nonce='+notifku.nonce+'&action=notifku_data';
+	// notifku.data = localStorage.getItem('notifku_data') ? localStorage.getItem('notifku_data') : '';
+	// notifku.data_local_expired = localStorage.getItem('notifku_data_expired') ? localStorage.getItem('notifku_data_expired') : 0;
+	//
+	// if( notifku.data && parseInt(notifku.data_local_expired) > parseInt(notifku.now) && parseInt(notifku.browser_cache) > 0 ){
+	// 	let data = JSON.parse(notifku.data);
+	// 	if( data.length > 0 ){
+	// 		setInterval(function(){
+	// 			notifkuPush(data[notifku.i], notifku.number);
+	// 			let length = data.length - 1;
+	// 			if( notifku.i < length ){
+	// 				notifku.i++;
+	// 			}else{
+	// 				notifku.i = 0;
+	// 			}
+	// 			notifku.number++;
+	// 		}, notifku.interval);
+	// 	}else{
+	// 		localStorage.removeItem('notifku_data');
+	// 		localStorage.removeItem('notifku_data_expired');
+	// 	}
+	// }else{
+	// 	notifku.ajax.open('GET', notifku.ajax_url);
+	// 	notifku.ajax.onload = function(){
+	// 		if( notifku.ajax.status >= 200 && notifku.ajax.status < 300 ){
+	// 			let data = JSON.parse(notifku.ajax.responseText);
+	// 			if( data.length > 0 ){
+	// 				localStorage.setItem('notifku_data', notifku.ajax.responseText);
+	// 				localStorage.setItem('notifku_data_expired', notifku.data_expired);
+	// 				setInterval(function(){
+	// 					notifkuPush(data[notifku.i], notifku.number);
+	// 					let length = data.length - 1;
+	// 					if( notifku.i < length ){
+	// 						notifku.i++;
+	// 					}else{
+	// 						notifku.i = 0;
+	// 					}
+	// 					notifku.number++;
+	// 				}, notifku.interval);
+	// 			}else{
+	// 				localStorage.removeItem('notifku_data');
+	// 				localStorage.removeItem('notifku_data_expired');
+	// 			}
+	// 		}else{
+	// 			localStorage.removeItem('notifku_data');
+	// 			localStorage.removeItem('notifku_data_expired');
+	// 		}
+	// 	}
+	// 	notifku.ajax.send(null);
+	// }
+	//
+	// function notifkuPush(data, num){
+	// 	let template = notifku.template;
+	// 	template = template.replace('{image}', data.image);
+	// 	template = template.replace('{line_1}', data.line_1);
+	// 	template = template.replace('{line_2}', data.line_2);
+	// 	template = template.replace('{line_3}', data.line_3);
+	//
+	// 	notifku.element.innerHTML = template;
+	// 	setTimeout(function(){
+	// 		let el = notifku.element.querySelector('.notifku');
+	// 		el.classList.add('notifku-push');
+	// 	}, 100);
+	//
+	// 	setTimeout(function(){
+	// 		let el = notifku.element.querySelector('.notifku');
+	// 		el.classList.remove('notifku-push');
+	// 		//notifku.element.removeChild(el);
+	// 	}, notifku.show_time);
+	// }
+
+	let Notifku;
+	Notifku = {
+		init: function(){
+			this.run();
+			this.data();
+		},
+		data: function(){
+			let data = localStorage.getItem(notifku.cache_key) ? JSON.parse(localStorage.getItem(notifku.cache_key)) : [];
+			if( data.length < 1 ){
+				let ajax = new XMLHttpRequest();
+				notifku.ajax_url += '?nonce='+notifku.nonce+'&action=notifku_data';
+				ajax.open('GET', notifku.ajax_url);
+				ajax.onload = function(){
+					if( ajax.status >= 200 && ajax.status < 300 ){
+						let data = JSON.parse(ajax.responseText);
+						if( data.length > 0 ){
+							localStorage.setItem(notifku.cache_key, ajax.responseText);
+						}
+					}
+				}
+				ajax.send(null);
+			}
+		},
+		push: function(){
+			setTimeout(function(){
+				let el = d.querySelector('.notifku');
+				el.classList.add(notifku.position+'-push');
+				el.classList.remove(notifku.position);
+			}, 100);
+
+			setTimeout(function(){
+				let el = d.querySelector('.notifku');
+				el.classList.remove(notifku.position+'-push');
+				el.classList.add(notifku.position);
+				setTimeout(function(){
+					el.parentNode.removeChild(el);
+				},500)
+			}, notifku.show_time);
+		},
+		run: function(){
+			setTimeout(function(){
+
+				let data = localStorage.getItem(notifku.cache_key) ? JSON.parse(localStorage.getItem(notifku.cache_key)) : [];
+				console.log(data.length);
+
+				if( data.length > 1 ){
+					let template = d.getElementById('notifku-template').innerHTML;
+					setInterval(function(){
+						let item = data[Math.floor(Math.random() * data.length)],
+						templ = template;
+						templ = templ.replace('{image}', item.image);
+						templ = templ.replace('{content}', item.content);
+						templ = templ.replace('{time}', item.time);
+
+						let el = d.createElement('div');
+						el.className = 'notifku '+notifku.position;
+						el.innerHTML = templ;
+
+						d.getElementsByTagName('body')[0].appendChild(el);
+
+						Notifku.push();
+					}, notifku.interval);
+
+				}
+			},1000)
+		}
+	}
+
+	Notifku.init();
+
+})(window,document);
